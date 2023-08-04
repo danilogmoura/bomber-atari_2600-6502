@@ -1,7 +1,7 @@
     processor 6502
     
-    include "../dasm/machines/atari2600/vcs.h"
-    include "../dasm/machines/atari2600/macro.h"
+    include "vcs.h"
+    include "macro.h"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Iniciar na posição $80 um segmento na memória RAM para a declaração das variáveis
@@ -11,13 +11,11 @@
 
 JetXPox         byte        ; posição X do jogador 0
 JetYPox         byte        ; posição Y do jogador 0
-
 BomberXPos      byte        ; posição X do jogador 1
 BomberYPos      byte        ; posição Y do jogador 1
 
 JetSpritePtr    word        ; ponteiro para a sprite do jogador 0
 JetColorPtr     word        ; ponteiro para a cor do jogador 0
-
 BomberSpritePtr word        ; ponteiro para a sprite do jogador 1
 BomberColorPtr  word        ; ponteiro para a cor do jogador 1
 
@@ -101,7 +99,7 @@ StartFrame:
     sta VBLANK              ; desativa o VBLANK
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Exibe as 192 scanlines visíveis
+;; Exibe as 96 scanlines visíveis
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GameVisibleLine:
     lda #$84                ; seta a cor azul para o background
@@ -122,9 +120,44 @@ GameVisibleLine:
     lda #0
     sta PF2                 ; configuração padrão de bits para o playfield 2
 
-    ldx #192                ; contador X para o restante das scanlines
+    ldx #96                 ; contador X para o restante das scanlines
 .GameLineVisible:
-    sta WSYNC               ; espera o inicio da próxima scanline
+.AreWeInsideJetSprite:
+    txa                     ; carrega o contador X
+    sec                     ; seta o bit de carry
+    sbc JetYPox             ; subtrai a posição Y do jogador 0 do contador X
+    cmp JET_HEIGHT          ; compara o resultado com a altura da sprite do jogador 0
+    bcc .DrawSrpiteP0       ; se o resultado for menor que a altura da sprite do jogador 0, desenha a sprite
+    lda #00                 ; se não, carrega 0
+
+.DrawSrpiteP0:
+    tay                     ; carrega o contador Y
+    lda (JetSpritePtr),y    ; carrega o byte da sprite do jogador 0
+    sta WSYNC               ; espera pela scanline
+    sta GRP0                ; desenha a sprite do jogador 0
+    lda (JetColorPtr),y     ; carrega o byte da cor do jogador 0
+    sta COLUP0              ; seta a cor do jogador 0
+
+.AreWeInsideBomberSprite:
+    txa                     ; carrega o contador X
+    sec                     ; seta o bit de carry
+    sbc BomberYPos          ; subtrai a posição Y do jogador 1 do contador X
+    cmp BOMBER_HEIGHT       ; compara o resultado com a altura da sprite do jogador 1
+    bcc .DrawSrpiteP1       ; se o resultado for menor que a altura da sprite do jogador 1, desenha a sprite
+    lda #00                 ; se não, carrega 1
+
+.DrawSrpiteP1:
+    tay                     ; carrega o contador Y
+
+    lda #%00000101
+    sta NUSIZ1              ; seta o tamanho da sprite do jogador 1
+
+    lda (BomberSpritePtr),y ; carrega o byte da sprite do jogador 1
+    sta WSYNC               ; espera pela scanline
+    sta GRP1                ; desenha a sprite do jogador 1
+    lda (BomberColorPtr),y  ; carrega o byte da cor do jogador 1
+    sta COLUP1              ; seta a cor do jogador 1
+
     dex                     ; decrementa o contador
     bne .GameLineVisible    ; se X != 0, repete o loop
 
