@@ -116,6 +116,21 @@ CheckP0Right:
 EndInputCheck:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Cálculos para atualizar a posição do proximo frame
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+UpdateBomberPosition:
+    lda BomberYPos          ; carrega a posição Y do jogador 1
+    clc                     ; limpa o bit de carry
+    cmp #00                 ; compara a posicao Y do jogador 1 com 0
+    bmi .ResetBomberPosition; se o resultado for menor que 0, reseta a posição Y do jogador 1
+    dec BomberYPos          ; se não, decrementa a posição Y do jogador 1
+    jmp EndPositionUpdate   ; vai para o final do loop
+.ResetBomberPosition
+    lda #96
+    sta BomberYPos          ; reseta a posição Y do jogador 1 para 96
+
+EndPositionUpdate:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cálculos e tarefas realizadas no pré-VBlank
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     lda JetXPos             ; carrega a posição X do jogador 0
