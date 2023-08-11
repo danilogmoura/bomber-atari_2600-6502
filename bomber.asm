@@ -19,6 +19,8 @@ JetColorPtr     word        ; ponteiro para a cor do jogador 0
 BomberSpritePtr word        ; ponteiro para a sprite do jogador 1
 BomberColorPtr  word        ; ponteiro para a cor do jogador 1
 
+JetAnimOffset   byte        ; offset para a animação do jogador 0
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -84,24 +86,32 @@ CheckP0Up:
     bit SWCHA
     bne CheckP0Down         ; se sim, vai para o próximo teste
     inc JetYPos             ; se não, incrementa a posição Y do jogador 0
+    lda #00                 ; carrega 0
+    sta JetAnimOffset       ; offset para a animação do jogador 0 usando a primeira sprite
 
 CheckP0Down:
     lda #%00100000          ; jogador 1 pressionou o botão DOWN?
     bit SWCHA
     bne CheckP0Left         ; se sim, vai para o próximo teste
     dec JetYPos             ; se não, decrementa a posição Y do jogador 0
+    lda #00                 ; carrega 0
+    sta JetAnimOffset       ; offset para a animação do jogador 0 usando a primeira sprite
 
 CheckP0Left:
     lda #%01000000          ; jogador 1 pressionou o botão LEFT?
     bit SWCHA
-    bne CheckP0Right         ; se sim, vai para o próximo teste
+    bne CheckP0Right        ; se sim, vai para o próximo teste
     dec JetXPos             ; se não, decrementa a posição X do jogador 0
+    lda JET_HEIGHT          ; 9
+    sta JetAnimOffset       ; offset para a animação do jogador 0 usando a segunda sprite
 
 CheckP0Right:
     lda #%10000000          ; jogador 1 pressionou o botão RIGHT?
     bit SWCHA
     bne EndInputCheck       ; se sim, vai para o próximo teste
     inc JetXPos             ; se não, incrementa a posição X do jogador 0
+    lda JET_HEIGHT          ; 9
+    sta JetAnimOffset       ; offset para a animação do jogador 0 usando a segunda sprite
 
 EndInputCheck:
 
@@ -170,6 +180,9 @@ GameVisibleLine:
     lda #00                 ; se não, carrega 0
 
 .DrawSrpiteP0:
+    clc                    ; limpa o bit de carry
+    adc JetAnimOffset      ; adiciona o offset da animação do jogador 0
+
     tay                     ; carrega o contador Y
     lda (JetSpritePtr),y    ; carrega o byte da sprite do jogador 0
     sta WSYNC               ; espera pela scanline
@@ -199,6 +212,9 @@ GameVisibleLine:
 
     dex                     ; decrementa o contador
     bne .GameLineVisible    ; se X != 0, repete o loop
+
+    lda #00
+    sta JetAnimOffset       ; reseta o offset da animação do jogador 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gera as 30 scanlines do overscan (VBLANK), recomendado
