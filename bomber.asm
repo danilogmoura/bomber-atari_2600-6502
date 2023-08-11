@@ -9,8 +9,8 @@
     seg.u Variables
     org $80
 
-JetXPox         byte        ; posição X do jogador 0
-JetYPox         byte        ; posição Y do jogador 0
+JetXPos         byte        ; posição X do jogador 0
+JetYPos         byte        ; posição Y do jogador 0
 BomberXPos      byte        ; posição X do jogador 1
 BomberYPos      byte        ; posição Y do jogador 1
 
@@ -39,9 +39,9 @@ Reset:
 ;; Inicialização das variaveis e dos resgistradores TIA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     lda #10
-    sta JetYPox             ; JetYPos = 10
-    lda #00
-    sta JetXPox             ; JetXPos = 60
+    sta JetYPos             ; JetYPos = 10
+    lda #60
+    sta JetXPos             ; JetXPos = 60
 
     lda #83
     sta BomberYPos          ; BomberYPos = 83
@@ -53,25 +53,21 @@ Reset:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     lda #<JetSprite         ; carrega o byte menos significativo do endereço da sprite do jogador 0
     sta JetSpritePtr        ; salva o endereço da sprite do jogador 0
-
     lda #>JetSprite         ; carrega o byte mais significativo do endereço da sprite do jogador 0
     sta JetSpritePtr+1      ; salva o endereço da sprite do jogador 0
 
     lda #<JetColor          ; carrega o byte menos significativo do endereço da cor do jogador 0
     sta JetColorPtr         ; salva o endereço da cor do jogador 0
-
     lda #>JetColor          ; carrega o byte mais significativo do endereço da cor do jogador 0
     sta JetColorPtr+1       ; salva o endereço da cor do jogador 0
 
     lda #<BomberSprite      ; carrega o byte menos significativo do endereço da sprite do jogador 1
     sta BomberSpritePtr     ; salva o endereço da sprite do jogador 1
-
     lda #>BomberSprite      ; carrega o byte mais significativo do endereço da sprite do jogador 1
     sta BomberSpritePtr+1   ; salva o endereço da sprite do jogador 1
 
     lda #<BomberColor       ; carrega o byte menos significativo do endereço da cor do jogador 1
     sta BomberColorPtr      ; salva o endereço da cor do jogador 1
-
     lda #>BomberColor       ; carrega o byte mais significativo do endereço da cor do jogador 1
     sta BomberColorPtr+1    ; salva o endereço da cor do jogador 1
 
@@ -81,9 +77,38 @@ Reset:
 StartFrame:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Processamento da entrada do joystick do jogador 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CheckP0Up:
+    lda #%00010000          ; jogador 1 pressionou o botão UP?
+    bit SWCHA
+    bne CheckP0Down         ; se sim, vai para o próximo teste
+    inc JetYPos             ; se não, incrementa a posição Y do jogador 0
+
+CheckP0Down:
+    lda #%00100000          ; jogador 1 pressionou o botão DOWN?
+    bit SWCHA
+    bne CheckP0Left         ; se sim, vai para o próximo teste
+    dec JetYPos             ; se não, decrementa a posição Y do jogador 0
+
+CheckP0Left:
+    lda #%01000000          ; jogador 1 pressionou o botão LEFT?
+    bit SWCHA
+    bne CheckP0Right         ; se sim, vai para o próximo teste
+    dec JetXPos             ; se não, decrementa a posição X do jogador 0
+
+CheckP0Right:
+    lda #%10000000          ; jogador 1 pressionou o botão RIGHT?
+    bit SWCHA
+    bne EndInputCheck       ; se sim, vai para o próximo teste
+    inc JetXPos             ; se não, incrementa a posição X do jogador 0
+
+EndInputCheck:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cálculos e tarefas realizadas no pré-VBlank
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    lda JetXPox             ; carrega a posição X do jogador 0
+    lda JetXPos             ; carrega a posição X do jogador 0
     ldy #00
     jsr SetObjetctXPos      ; chama a subrotina para mover o jogador 0 na posição X
 
@@ -139,7 +164,7 @@ GameVisibleLine:
 .AreWeInsideJetSprite:
     txa                     ; carrega o contador X
     sec                     ; seta o bit de carry
-    sbc JetYPox             ; subtrai a posição Y do jogador 0 do contador X
+    sbc JetYPos             ; subtrai a posição Y do jogador 0 do contador X
     cmp JET_HEIGHT          ; compara o resultado com a altura da sprite do jogador 0
     bcc .DrawSrpiteP0       ; se o resultado for menor que a altura da sprite do jogador 0, desenha a sprite
     lda #00                 ; se não, carrega 0
