@@ -40,7 +40,7 @@ Reset:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     lda #10
     sta JetYPox             ; JetYPos = 10
-    lda #60
+    lda #00
     sta JetXPox             ; JetXPos = 60
 
     lda #83
@@ -79,6 +79,20 @@ Reset:
 ;; iniciar o loop de exibição principal e a renderização do quadro
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 StartFrame:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Cálculos e tarefas realizadas no pré-VBlank
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    lda JetXPox             ; carrega a posição X do jogador 0
+    ldy #00
+    jsr SetObjetctXPos      ; chama a subrotina para mover o jogador 0 na posição X
+
+    lda BomberXPos          ; carrega a posição X do jogador 1
+    ldy #01
+    jsr SetObjetctXPos      ; chama a subrotina para mover o jogador 1 na posição X
+
+    sta WSYNC               ; espera pela scanline
+    sta HMOVE               ; move os objetos na posição X - Aplica o deslocamento FINO
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Inicia o VSYNC e o VBLANK
@@ -177,7 +191,29 @@ Overscan:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loop principal do jogo, volta para o inicio do loop de exibição principal
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    jmp StartFrame          ; vai para o proximo frame  
+    jmp StartFrame          ; vai para o proximo frame
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Subrotina para mover os objetos na posicao horizontal com deslocamento FINO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; A é a posição alvo da coordenada X em pixels do nosso objeto
+;; Y é o tipo de objeto (0 = Jet, 1 = Bomber, 2 = missile0, 3 = missile1, 4 = ball)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SetObjetctXPos subroutine
+    sta WSYNC               ; espera pela scanline
+    sec                     ; certifique-se que o bit de carry esteja definido antes da subtração    
+.Div15Loop
+    sbc #15                 ; subtrai 15 da posição alvo
+    bcs .Div15Loop          ; se o resultado for maior que 15, repete o loop
+    eor #07                 ; inverte os 3 bits menos significativos
+    asl
+    asl
+    asl
+    asl                     ; 4 shift left para multiplicar por 16
+    sta HMP0,Y              ; salva o resultado no registrador HMxx
+    sta RESP0,Y             ; corrija a posição do objeto em incrementos de 15 etapas
+    rts                     ; retorna da subrotina
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define o array de bytes para a sprite
